@@ -1,5 +1,4 @@
-﻿
-# Cmake的命令不区分大小写，例如message，set等命令；但Cmake的变量区分大小写
+﻿# Cmake的命令不区分大小写，例如message，set等命令；但Cmake的变量区分大小写
 # 为统一风格，本项目的Cmake命令全部采用小写，变量全部采用大写加下划线组合。
 
 cmake_minimum_required(VERSION 3.5)
@@ -108,10 +107,11 @@ else()
 endif()
 
 # The bin file directory is one level above the current directory
-# cn:bin文件目录在当前目录的上上一级
-# 安装目录默认名字为bin_qt5.14.2_msvc_x64
+get_filename_component(SARIBBON_PARENT_DIR ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
+get_filename_component(SARIBBON_PROJECT_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
 set(SARIBBON_LOCAL_INSTALL_BIN_NAME bin_qt${QT_VERSION}_${CMAKE_CXX_COMPILER_ID}_${SARIBBON_PLATFORM})
-set(SARIBBON_LOCAL_INSTALL_BIN_DIR ${CMAKE_CURRENT_LIST_DIR}/${SARIBBON_LOCAL_INSTALL_BIN_NAME})
+set(SARIBBON_LOCAL_INSTALL_BIN_DIR ${SARIBBON_PARENT_DIR}/${SARIBBON_LOCAL_INSTALL_BIN_NAME})
+message(STATUS "SARIBBON_LOCAL_INSTALL_BIN_DIR set to: ${SARIBBON_LOCAL_INSTALL_BIN_DIR}")
 
 # windows系统下，默认直接安装到当前文件夹下
 if(SARIBBON_INSTALL_IN_CURRENT_DIR)
@@ -119,6 +119,44 @@ if(SARIBBON_INSTALL_IN_CURRENT_DIR)
     message(STATUS "SARIBBON_INSTALL_IN_CURRENT_DIR=ON,will install in:${CMAKE_INSTALL_PREFIX}")
 endif()
 
+# Set binary output directories to a Bin folder that is a sibling of ThirdParty-SARibbon
+# Output layout: <parent>/Bin/<Platform>/<Configuration>
+set(SARIBBON_BIN_ROOT ${SARIBBON_PARENT_DIR}/Bin)
+message(STATUS "SARIBBON_BIN_ROOT set to: ${SARIBBON_BIN_ROOT}")
+
+# Set temporary/intermediate root: <parent>/tmp/<ProjectName>/<Platform>/<Configuration>
+set(SARIBBON_TMP_ROOT ${SARIBBON_PARENT_DIR}/tmp)
+message(STATUS "SARIBBON_TMP_ROOT set to: ${SARIBBON_TMP_ROOT}")
+
+# Ensure we have a list of configurations for multi-config generators
+if(NOT DEFINED CMAKE_CONFIGURATION_TYPES)
+    # Default common MSVC configurations
+    set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo;MinSizeRel")
+endif()
+
+# For multi-config generators like Visual Studio set per-configuration output directories
+foreach(cfg IN LISTS CMAKE_CONFIGURATION_TYPES)
+    string(TOUPPER "${cfg}" CFG_UP)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${CFG_UP} "${SARIBBON_BIN_ROOT}/${SARIBBON_PLATFORM}/${cfg}")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${CFG_UP} "${SARIBBON_BIN_ROOT}/${SARIBBON_PLATFORM}/${cfg}")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${CFG_UP} "${SARIBBON_BIN_ROOT}/${SARIBBON_PLATFORM}/${cfg}")
+    # PDB output (for MSVC)
+    set(CMAKE_PDB_OUTPUT_DIRECTORY_${CFG_UP} "${SARIBBON_BIN_ROOT}/${SARIBBON_PLATFORM}/${cfg}")
+    # Intermediate directory used by VS (IntDir). CMake uses CMAKE_INTDIR in generator expressions; set for downstream use.
+    set(CMAKE_INTDIR_${CFG_UP} "${SARIBBON_TMP_ROOT}/${SARIBBON_PROJECT_NAME}/${SARIBBON_PLATFORM}/${cfg}")
+endforeach()
+
+# For single-config generators, fall back to CMAKE_BUILD_TYPE if set
+if(DEFINED CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE STREQUAL "")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${SARIBBON_BIN_ROOT}/${SARIBBON_PLATFORM}/${CMAKE_BUILD_TYPE}")
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${SARIBBON_BIN_ROOT}/${SARIBBON_PLATFORM}/${CMAKE_BUILD_TYPE}")
+    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${SARIBBON_BIN_ROOT}/${SARIBBON_PLATFORM}/${CMAKE_BUILD_TYPE}")
+    set(CMAKE_PDB_OUTPUT_DIRECTORY "${SARIBBON_BIN_ROOT}/${SARIBBON_PLATFORM}/${CMAKE_BUILD_TYPE}")
+    set(CMAKE_INTDIR "${SARIBBON_TMP_ROOT}/${SARIBBON_PROJECT_NAME}/${SARIBBON_PLATFORM}/${CMAKE_BUILD_TYPE}")
+endif()
+
+# Expose generator-specific variables for Visual Studio by mapping CMAKE_INTDIR when configuring targets
+# Note: Some generators may ignore CMAKE_INTDIR; Visual Studio uses <IntDir> set by CMake automatically.
 
 # QWindowKit的依赖
 # QWindowKit的查找顺序：
@@ -199,7 +237,6 @@ if(SARIBBON_BUILD_EXAMPLES)
     message(STATUS "build example")
     add_subdirectory(example)
 endif()
-
 
 
 ##################################
