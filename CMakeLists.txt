@@ -99,7 +99,9 @@ if(MSVC)
 endif()
 
 if(MSVC)
+    # 启用 Visual Studio 多处理器编译，加快 C++ 源文件的并行构建速度
     add_compile_options(/utf-8)
+    add_compile_options(/MP)
 endif()
 
 
