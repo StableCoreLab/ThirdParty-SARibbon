@@ -98,6 +98,10 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4819")
 endif()
 
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 
 # 平台判断
 if("${CMAKE_SIZEOF_VOID_P}" STREQUAL "4")
@@ -261,4 +265,3 @@ install(FILES
     DESTINATION lib/qmake/SARibbonBar
     COMPONENT qmake
 )
-
