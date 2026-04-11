@@ -110,17 +110,28 @@ else()
     set(SARIBBON_PLATFORM "x64")
 endif()
 
-# The bin file directory is one level above the current directory
+# The local install root is one level above the current directory,
+# matching the OgreNext-style Bin/<platform> layout.
 get_filename_component(SARIBBON_PARENT_DIR ${CMAKE_CURRENT_LIST_DIR} DIRECTORY)
 get_filename_component(SARIBBON_PROJECT_NAME ${CMAKE_CURRENT_LIST_DIR} NAME)
-set(SARIBBON_LOCAL_INSTALL_BIN_NAME bin_qt${QT_VERSION}_${CMAKE_CXX_COMPILER_ID}_${SARIBBON_PLATFORM})
-set(SARIBBON_LOCAL_INSTALL_BIN_DIR ${SARIBBON_PARENT_DIR}/${SARIBBON_LOCAL_INSTALL_BIN_NAME})
-message(STATUS "SARIBBON_LOCAL_INSTALL_BIN_DIR set to: ${SARIBBON_LOCAL_INSTALL_BIN_DIR}")
+set(SARIBBON_LOCAL_INSTALL_ROOT ${SARIBBON_PARENT_DIR}/Bin/${SARIBBON_PLATFORM})
+message(STATUS "SARIBBON_LOCAL_INSTALL_ROOT set to: ${SARIBBON_LOCAL_INSTALL_ROOT}")
 
-# windows系统下，默认直接安装到当前文件夹下
-if(SARIBBON_INSTALL_IN_CURRENT_DIR)
-    set(CMAKE_INSTALL_PREFIX "${SARIBBON_LOCAL_INSTALL_BIN_DIR}")
-    message(STATUS "SARIBBON_INSTALL_IN_CURRENT_DIR=ON,will install in:${CMAKE_INSTALL_PREFIX}")
+if(CMAKE_CONFIGURATION_TYPES)
+    set(SARIBBON_INSTALL_CONFIG_DIR "$<CONFIG>")
+elseif(CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE STREQUAL "")
+    set(SARIBBON_INSTALL_CONFIG_DIR "${CMAKE_BUILD_TYPE}")
+else()
+    set(SARIBBON_INSTALL_CONFIG_DIR "Release")
+endif()
+
+# Match OgreNext-style local installs: by default install into the sibling Bin tree.
+if(SARIBBON_INSTALL_IN_CURRENT_DIR AND (WIN32 OR APPLE))
+    if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+        set(CMAKE_INSTALL_PREFIX
+            "${SARIBBON_LOCAL_INSTALL_ROOT}" CACHE PATH "SARibbon install prefix" FORCE
+        )
+    endif()
 endif()
 
 # Set binary output directories to a Bin folder that is a sibling of ThirdParty-SARibbon
@@ -180,11 +191,18 @@ if(_SARIBBON_USE_FRAMELESS_LIB)
     endif()
 
     # 添加项目本地安装目录作为备选路径
-    set(_local_qwk_dir ${SARIBBON_LOCAL_INSTALL_BIN_DIR}/lib/cmake/QWindowKit)
-    if(EXISTS "${_local_qwk_dir}")
-        list(APPEND _qwk_search_paths ${_local_qwk_dir})
-        message(STATUS "Adding local install path for QWindowKit: ${_local_qwk_dir}")
+    if(CMAKE_CONFIGURATION_TYPES)
+        set(_local_qwk_config_candidates Release Debug RelWithDebInfo MinSizeRel)
+    else()
+        set(_local_qwk_config_candidates ${SARIBBON_INSTALL_CONFIG_DIR})
     endif()
+    foreach(_local_qwk_config IN LISTS _local_qwk_config_candidates)
+        set(_local_qwk_dir ${SARIBBON_LOCAL_INSTALL_ROOT}/${_local_qwk_config}/lib/cmake/QWindowKit)
+        if(EXISTS "${_local_qwk_dir}")
+            list(APPEND _qwk_search_paths ${_local_qwk_dir})
+            message(STATUS "Adding local install path for QWindowKit: ${_local_qwk_dir}")
+        endif()
+    endforeach()
 
     # 尝试查找QWindowKit包
     find_package(QWindowKit QUIET
