@@ -127,6 +127,9 @@ else()
     set(SARIBBON_INSTALL_CONFIG_DIR "Release")
 endif()
 
+# 统一运行时安装目录，确保 exe 和 dll 安装到同一位置
+set(SARIBBON_INSTALL_RUNTIME_DIR "Bin/${SARIBBON_PLATFORM}/${SARIBBON_INSTALL_CONFIG_DIR}")
+
 # Match OgreNext-style local installs: by default install into the sibling Bin tree.
 if(SARIBBON_INSTALL_IN_CURRENT_DIR AND (WIN32 OR APPLE))
     if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
