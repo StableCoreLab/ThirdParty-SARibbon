@@ -202,7 +202,7 @@ if(_SARIBBON_USE_FRAMELESS_LIB)
         set(_local_qwk_config_candidates ${SARIBBON_INSTALL_CONFIG_DIR})
     endif()
     foreach(_local_qwk_config IN LISTS _local_qwk_config_candidates)
-        set(_local_qwk_dir ${SARIBBON_LOCAL_INSTALL_ROOT}/${_local_qwk_config}/lib/cmake/QWindowKit)
+        set(_local_qwk_dir ${SARIBBON_LOCAL_INSTALL_ROOT}/${_local_qwk_config}/Lib/cmake/QWindowKit)
         if(EXISTS "${_local_qwk_dir}")
             list(APPEND _qwk_search_paths ${_local_qwk_dir})
             message(STATUS "Adding local install path for QWindowKit: ${_local_qwk_dir}")
@@ -285,6 +285,6 @@ set(SARIBBON_QMAKE_FILES
     )
 install(FILES
     ${SARIBBON_QMAKE_FILES}
-    DESTINATION lib/qmake/SARibbonBar
+    DESTINATION Lib/qmake/SARibbonBar
     COMPONENT qmake
 )
